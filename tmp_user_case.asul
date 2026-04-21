@@ -1,0 +1,98 @@
+@Version: 1.0
+@Author: Asul
+@Description: A simple form component for user input.
+
+Form{
+    .Id = "TestForm"
+    Group{
+        .Title = "测试组件"
+        KeyBind{
+            .Id = "TestKeyBind"
+            .Enabled = true
+            .Description = "测试按键绑定"
+            .SubDescription = "按下此键将执行测试命令"
+            .Command = "+test"
+            .Bind("v")
+        }
+        MustField{
+            .Id = "TestMustField"
+            .Enabled = *(TestKeyBind).Bind == "F" ? true : false
+            .Description = "这是一个必须字段"
+            .SubDescription = "必须字段示例"
+            .Command = "+Attack;"
+            .Bind("mouse1")
+        }
+        TextField{
+            .Id = "TestTextField"
+            .Enabled = true
+            .Description = "这是一个文本字段"
+            .SubDescription = "文本字段示例"
+            .Text = "默认文本"
+            .Command = "echo ${$(TestTextField).Text}"
+        }
+        LineField{
+            .Id = "TestLineField"
+            .Enabled = true
+            .Description = "这是一个输入字段"
+            .SubDescription = "输入字段"
+            .Args{
+                .Arg{
+                    .Id = "id1"
+                    .Description = "参数1"
+                    .Value = "1"
+                }
+                .Arg{
+                    .Id = "id2"
+                    .Description = "参数2"
+                    .Value = "2"
+                }
+                .Arg{
+                    .Id = "id3"
+                    .Description = "参数3"
+                    .Value = "3"
+                }
+            }
+            .Expression = "echo" + $ProcessArgs(id1,id2,id3)
+        }
+        OptionField{
+            .Id = "TestOptionField"
+            .Enabled = true
+            .Description = "这是一个选项字段"
+            .SubDescription = "选项字段示例"
+            Options{
+                Option{
+                    .Id = "Option1"
+                    .Description = "选项1"
+                    .Command = "echo '选项1被选中'"
+                }
+                Option{
+                    .Id = "Option2"
+                    .Description = "选项2"
+                    .Command = "echo '选项2被选中'"
+                }
+                Option{
+                    .Id = "Option3"
+                    .Description = "选项3"
+                    .Command = "echo '选项3被选中'"
+                }
+            }
+            .Selected = "Option1"
+        }
+    }
+}
+
+Scripts{
+    function ProcessArgs(arg1,arg2,arg3)
+            local result = "echo"
+            if arg3 ~= "" then
+                result = result .. " " .. arg3
+            end
+            if arg2 ~= "" then
+                result = result .. " " .. arg2
+            end
+            if arg1 ~= "" then
+                result = result .. " " .. arg1
+            end
+            return result
+        end
+}

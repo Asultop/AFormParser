@@ -1,0 +1,106 @@
+@Version: 1.0
+@Author: LegacyConverter
+@Description: Converted from legacy asul by Qt C++ minimal converter.
+
+Form{
+    .Id = "Function_Preference_Form"
+    Group{
+        .Title = "测试TextField"
+        TextField{
+            .Id = "Line_001"
+            .Enabled = true
+            .Description = "灵敏度"
+            .SubDescription = "sensitivity设置"
+            .Text = "2.35"
+            .Command = "alias RecoverSensitivity \"sensitivity ${$(Line_001).Text}\""
+        }
+        
+    }
+    Group{
+        .Title = "测试OptionField"
+        OptionField{
+            .Id = "Func_001"
+            .Enabled = true
+            .Description = "急停开启时颜色"
+            .SubDescription = "调整颜色"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "白色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 1\""
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "浅蓝"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 2\""
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "深蓝"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 3\""
+                }
+                Option{
+                    .Id = "Option_004"
+                    .Description = "紫色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 4\""
+                }
+                Option{
+                    .Id = "Option_005"
+                    .Description = "红色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 5\""
+                }
+                Option{
+                    .Id = "Option_006"
+                    .Description = "橙色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 6\""
+                }
+                Option{
+                    .Id = "Option_007"
+                    .Description = "黄色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 7\""
+                }
+                Option{
+                    .Id = "Option_008"
+                    .Description = "绿色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 8\""
+                }
+                Option{
+                    .Id = "Option_009"
+                    .Description = "浅绿/青色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 9\""
+                }
+                Option{
+                    .Id = "Option_010"
+                    .Description = "粉色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 10\""
+                }
+                Option{
+                    .Id = "Option_011"
+                    .Description = "默认颜色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 0\""
+                }
+                Option{
+                    .Id = "Option_012"
+                    .Description = "警匪色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 11\""
+                }
+            }
+            .Selected = "Option_001"
+        }
+        
+    }
+    Group{
+        .Title = "测试MustField"
+        MustField{
+            .Id = "Must_001"
+            .Enabled = true
+            .Description = "这是一个必须字段"
+            .SubDescription = "必须字段示例"
+            .Command = "+Attack;"
+            .Bind("mouse1")
+        }
+    }
+    Group{
+        .Title
+    }
+}

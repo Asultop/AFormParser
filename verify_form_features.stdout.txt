@@ -1,0 +1,20 @@
+[ok] Document::from() 可解析 Form
+[ok] Document 含 Form 节点
+[ok] Document 含 Scripts 节点
+[ok] Document::dump() 输出非空
+[ok] dump 保留 Form 与 Scripts 结构
+[ok] dump 结果可再次 parse
+[ok] Document::allNodes() 可遍历节点
+[ok] Document::findById() 可定位 KeyBind
+[ok] Document::findById() 可定位 Arg
+[ok] Document::toCFG() 输出非空
+[ok] toCFG 含 KeyBind 导出
+[ok] toCFG 含 OptionField 选中项导出
+[ok] toCFG 成功执行 Scripts 函数
+
+[summary] verify_form_features PASSED
+[cfg]
+//title "验证分组"
+bind mouse1 +attack
+echo AA_BB
+echo mode2

@@ -1,0 +1,91 @@
+title "个人设置"
+line "灵敏度" "sensitivity设置" "alias RecoverSensitivity \"sensitivity %1\"" "2.35"
+line "横向灵敏度" "m_yaw设置\n如果你不知道则保留默认" "alias RecoverM_yaw \"m_yaw %1\"" "0.022"
+line "纵向灵敏度" "m_pitch设置\n如果你不知道则保留默认" "alias RecoverM_pitch \"m_pitch %1\"" "0.022"
+line "灵敏度Y轴缩放" "sensitivity_y_scale设置\n如果你不知道则保留默认" "alias RecoverSensitivity_y_scale \"sensitivity_y_scale %1\"" "1"
+line "转身灵敏度" "快速转身数值设置\n 180÷(sensitivity×m_yaw) " "alias antiFlash_yaw \"yaw %1 1 1\"" "3481.624758"
+line "开火时灵敏度" "仅在开启'开火时更改灵敏度'时发挥作用" "alias Start_Attack_sensitivity \"sensitivity %1\"" "2.35"
+text "alias Stop_Attack_sensitivity \"RecoverSensitivity\"//非开火时灵敏度 同下RecoverSensitivity (勿动)" 
+text "alias RecoverFPS \"LimitFpsCancel;fps_max 0\""
+title "颜色设置"
+func "急停开启时颜色" "调整颜色" "alias HUDcolorEnable \"cl_hud_color 1\"" 12
+"alias HUDcolorEnable \"cl_hud_color 1\"" "白色"
+"alias HUDcolorEnable \"cl_hud_color 2\"" "浅蓝"
+"alias HUDcolorEnable \"cl_hud_color 3\"" "深蓝"
+"alias HUDcolorEnable \"cl_hud_color 4\"" "紫色"
+"alias HUDcolorEnable \"cl_hud_color 5\"" "红色"
+"alias HUDcolorEnable \"cl_hud_color 6\"" "橙色"
+"alias HUDcolorEnable \"cl_hud_color 7\"" "黄色"
+"alias HUDcolorEnable \"cl_hud_color 8\"" "绿色"
+"alias HUDcolorEnable \"cl_hud_color 9\"" "浅绿/青色"
+"alias HUDcolorEnable \"cl_hud_color 10\"" "粉色"
+"alias HUDcolorEnable \"cl_hud_color 0\"" "默认颜色"
+"alias HUDcolorEnable \"cl_hud_color 11\"" "警匪色"
+func "急停关闭时颜色" "调整颜色" "alias HUDcolorDisable \"cl_hud_color 1\"" 12
+"alias HUDcolorDisable \"cl_hud_color 1\"" "白色"
+"alias HUDcolorDisable \"cl_hud_color 2\"" "浅蓝"
+"alias HUDcolorDisable \"cl_hud_color 3\"" "深蓝"
+"alias HUDcolorDisable \"cl_hud_color 4\"" "紫色"
+"alias HUDcolorDisable \"cl_hud_color 5\"" "红色"
+"alias HUDcolorDisable \"cl_hud_color 6\"" "橙色"
+"alias HUDcolorDisable \"cl_hud_color 7\"" "黄色"
+"alias HUDcolorDisable \"cl_hud_color 8\"" "绿色"
+"alias HUDcolorDisable \"cl_hud_color 9\"" "浅绿/青色"
+"alias HUDcolorDisable \"cl_hud_color 10\"" "粉色"
+"alias HUDcolorDisable \"cl_hud_color 0\"" "默认颜色"
+"alias HUDcolorDisable \"cl_hud_color 11\"" "警匪色"
+title "功能"
+func "文字提示输出方式" "选择文字提示可见范围" "Echo_Help" 3
+"SayTeam_Help" "仅队友可见"
+"Say_Help" "所有人可见"
+"Echo_Help" "仅控制台可见"
+func "无冲松手急停" "开启或关闭无冲松手急停" "Open_Jiting" 2
+"Open_Jiting" "开启"
+"Close_Jiting" "关闭"
+func "自动压枪" "开启或关闭自动压枪（当前仅支持AK47）" "Close_NoRecoil" 2
+"Open_NoRecoil" "开启"
+"Close_NoRecoil" "关闭"
+func "灵敏度模式" "选择开火时是否切换灵敏度" "Normal_sensitivity" 2
+"Attack_sensitivity" "开火时更改灵敏度"
+"Normal_sensitivity" "普通灵敏度"
+func "准星模式" "选择准星后坐力跟随方式" "UnRecoil_Crosshair" 5
+"Double_Crosshair" "双准星"
+"Fast_Recoil_Crosshair" "开火后快速回正"
+"Run_Recoil_Crosshair" "仅跑打时跟随后坐力"
+"Recoil_Crosshair" "始终跟随后坐力"
+"UnRecoil_Crosshair" "不跟随后坐力"
+func "跳投" "开启或关闭跳投" "Close_JumpThrow" 2
+"Open_JumpThrow" "开启"
+"Close_JumpThrow" "关闭"
+func "前跳投" "开启或关闭前跳投" "Close_WJumpThrow" 2
+"Open_WJumpThrow" "开启"
+"Close_WJumpThrow" "关闭"
+func "手枪速射" "开启或关闭手枪速射" "Close_FastHandgun" 2
+"Open_FastHandgun" "开启"
+"Close_FastHandgun" "关闭"
+func "急停幅度" "选择急停幅度档位" "JT_MODE3" 7
+"JT_MODE1" "1档（最小，低帧建议）"
+"JT_MODE1.5" "1.5档（小）"
+"JT_MODE2" "2档（中等）"
+"JT_MODE3" "3档（中等）"
+"JT_MODE4" "4档（大，无冲变向变频）"
+"JT_MODE5" "5档（大，高帧建议）"
+"JT_MODE6" "6档（最大，高帧建议）"
+func "切刀和道具自动取消急停" "切刀和道具时是否自动取消急停" "AutoDisable" 2
+"AutoDisable" "开启"
+"UnAutoDisable" "关闭"
+func "加速静步" "开启或关闭内格夫加速静步" "Close_Sprint_Plus" 2
+"Open_Sprint_Plus" "开启"
+"Close_Sprint_Plus" "关闭"
+func "连跳" "开启或关闭按住空格连跳" "Close_Bhop" 2
+"Open_Bhop" "开启"
+"Close_Bhop" "关闭"
+func "大跳" "开启或关闭大跳" "Close_JumpBug" 2
+"Open_JumpBug" "开启"
+"Close_JumpBug" "关闭"
+func "RTSS锁帧" "开启或关闭RTSS锁帧" "Close_RTSSfps" 2
+"Open_RTSSfps" "开启"
+"Close_RTSSfps" "关闭"
+func "平台选择" "选择游戏平台环境" "Normal_Game" 2
+"Faceit_Game" "Faceit"
+"Normal_Game" "非Faceit"

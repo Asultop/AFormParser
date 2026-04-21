@@ -1,0 +1,546 @@
+@Version: 1.0
+@Author: LegacyConverter
+@Description: Converted from legacy asul by Qt C++ minimal converter.
+
+Form{
+    .Id = "Function_Preference_Form"
+    Group{
+        .Title = "个人设置"
+        TextField{
+            .Id = "Line_001"
+            .Enabled = true
+            .Description = "灵敏度"
+            .SubDescription = "sensitivity设置"
+            .Text = "2.35"
+            .Command = "alias RecoverSensitivity \"sensitivity ${$(Line_001).Text}\""
+        }
+        TextField{
+            .Id = "Line_002"
+            .Enabled = true
+            .Description = "横向灵敏度"
+            .SubDescription = "m_yaw设置\n如果你不知道则保留默认"
+            .Text = "0.022"
+            .Command = "alias RecoverM_yaw \"m_yaw ${$(Line_002).Text}\""
+        }
+        TextField{
+            .Id = "Line_003"
+            .Enabled = true
+            .Description = "纵向灵敏度"
+            .SubDescription = "m_pitch设置\n如果你不知道则保留默认"
+            .Text = "0.022"
+            .Command = "alias RecoverM_pitch \"m_pitch ${$(Line_003).Text}\""
+        }
+        TextField{
+            .Id = "Line_004"
+            .Enabled = true
+            .Description = "灵敏度Y轴缩放"
+            .SubDescription = "sensitivity_y_scale设置\n如果你不知道则保留默认"
+            .Text = "1"
+            .Command = "alias RecoverSensitivity_y_scale \"sensitivity_y_scale ${$(Line_004).Text}\""
+        }
+        TextField{
+            .Id = "Line_005"
+            .Enabled = true
+            .Description = "转身灵敏度"
+            .SubDescription = "快速转身数值设置\n 180÷(sensitivity×m_yaw) "
+            .Text = "3481.624758"
+            .Command = "alias antiFlash_yaw \"yaw ${$(Line_005).Text} 1 1\""
+        }
+        TextField{
+            .Id = "Line_006"
+            .Enabled = true
+            .Description = "开火时灵敏度"
+            .SubDescription = "仅在开启'开火时更改灵敏度'时发挥作用"
+            .Text = "2.35"
+            .Command = "alias Start_Attack_sensitivity \"sensitivity ${$(Line_006).Text}\""
+        }
+        TextField{
+            .Id = "Text_001"
+            .Enabled = true
+            .Description = "静态命令 1"
+            .SubDescription = "由 legacy text 指令转换"
+            .Command = "alias Stop_Attack_sensitivity \"RecoverSensitivity\"//非开火时灵敏度 同下RecoverSensitivity (勿动)"
+        }
+        TextField{
+            .Id = "Text_002"
+            .Enabled = true
+            .Description = "静态命令 2"
+            .SubDescription = "由 legacy text 指令转换"
+            .Command = "alias RecoverFPS \"LimitFpsCancel;fps_max 0\""
+        }
+    }
+    Group{
+        .Title = "颜色设置"
+        OptionField{
+            .Id = "Func_001"
+            .Enabled = true
+            .Description = "急停开启时颜色"
+            .SubDescription = "调整颜色"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "白色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 1\""
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "浅蓝"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 2\""
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "深蓝"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 3\""
+                }
+                Option{
+                    .Id = "Option_004"
+                    .Description = "紫色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 4\""
+                }
+                Option{
+                    .Id = "Option_005"
+                    .Description = "红色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 5\""
+                }
+                Option{
+                    .Id = "Option_006"
+                    .Description = "橙色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 6\""
+                }
+                Option{
+                    .Id = "Option_007"
+                    .Description = "黄色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 7\""
+                }
+                Option{
+                    .Id = "Option_008"
+                    .Description = "绿色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 8\""
+                }
+                Option{
+                    .Id = "Option_009"
+                    .Description = "浅绿/青色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 9\""
+                }
+                Option{
+                    .Id = "Option_010"
+                    .Description = "粉色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 10\""
+                }
+                Option{
+                    .Id = "Option_011"
+                    .Description = "默认颜色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 0\""
+                }
+                Option{
+                    .Id = "Option_012"
+                    .Description = "警匪色"
+                    .Command = "alias HUDcolorEnable \"cl_hud_color 11\""
+                }
+            }
+            .Selected = "Option_001"
+        }
+        OptionField{
+            .Id = "Func_002"
+            .Enabled = true
+            .Description = "急停关闭时颜色"
+            .SubDescription = "调整颜色"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "白色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 1\""
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "浅蓝"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 2\""
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "深蓝"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 3\""
+                }
+                Option{
+                    .Id = "Option_004"
+                    .Description = "紫色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 4\""
+                }
+                Option{
+                    .Id = "Option_005"
+                    .Description = "红色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 5\""
+                }
+                Option{
+                    .Id = "Option_006"
+                    .Description = "橙色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 6\""
+                }
+                Option{
+                    .Id = "Option_007"
+                    .Description = "黄色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 7\""
+                }
+                Option{
+                    .Id = "Option_008"
+                    .Description = "绿色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 8\""
+                }
+                Option{
+                    .Id = "Option_009"
+                    .Description = "浅绿/青色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 9\""
+                }
+                Option{
+                    .Id = "Option_010"
+                    .Description = "粉色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 10\""
+                }
+                Option{
+                    .Id = "Option_011"
+                    .Description = "默认颜色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 0\""
+                }
+                Option{
+                    .Id = "Option_012"
+                    .Description = "警匪色"
+                    .Command = "alias HUDcolorDisable \"cl_hud_color 11\""
+                }
+            }
+            .Selected = "Option_001"
+        }
+    }
+    Group{
+        .Title = "功能"
+        OptionField{
+            .Id = "Func_003"
+            .Enabled = true
+            .Description = "文字提示输出方式"
+            .SubDescription = "选择文字提示可见范围"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "仅队友可见"
+                    .Command = "SayTeam_Help"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "所有人可见"
+                    .Command = "Say_Help"
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "仅控制台可见"
+                    .Command = "Echo_Help"
+                }
+            }
+            .Selected = "Option_003"
+        }
+        OptionField{
+            .Id = "Func_004"
+            .Enabled = true
+            .Description = "无冲松手急停"
+            .SubDescription = "开启或关闭无冲松手急停"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_Jiting"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_Jiting"
+                }
+            }
+            .Selected = "Option_001"
+        }
+        OptionField{
+            .Id = "Func_005"
+            .Enabled = true
+            .Description = "自动压枪"
+            .SubDescription = "开启或关闭自动压枪（当前仅支持AK47）"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_NoRecoil"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_NoRecoil"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_006"
+            .Enabled = true
+            .Description = "灵敏度模式"
+            .SubDescription = "选择开火时是否切换灵敏度"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开火时更改灵敏度"
+                    .Command = "Attack_sensitivity"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "普通灵敏度"
+                    .Command = "Normal_sensitivity"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_007"
+            .Enabled = true
+            .Description = "准星模式"
+            .SubDescription = "选择准星后坐力跟随方式"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "双准星"
+                    .Command = "Double_Crosshair"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "开火后快速回正"
+                    .Command = "Fast_Recoil_Crosshair"
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "仅跑打时跟随后坐力"
+                    .Command = "Run_Recoil_Crosshair"
+                }
+                Option{
+                    .Id = "Option_004"
+                    .Description = "始终跟随后坐力"
+                    .Command = "Recoil_Crosshair"
+                }
+                Option{
+                    .Id = "Option_005"
+                    .Description = "不跟随后坐力"
+                    .Command = "UnRecoil_Crosshair"
+                }
+            }
+            .Selected = "Option_005"
+        }
+        OptionField{
+            .Id = "Func_008"
+            .Enabled = true
+            .Description = "跳投"
+            .SubDescription = "开启或关闭跳投"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_JumpThrow"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_JumpThrow"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_009"
+            .Enabled = true
+            .Description = "前跳投"
+            .SubDescription = "开启或关闭前跳投"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_WJumpThrow"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_WJumpThrow"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_010"
+            .Enabled = true
+            .Description = "手枪速射"
+            .SubDescription = "开启或关闭手枪速射"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_FastHandgun"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_FastHandgun"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_011"
+            .Enabled = true
+            .Description = "急停幅度"
+            .SubDescription = "选择急停幅度档位"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "1档（最小，低帧建议）"
+                    .Command = "JT_MODE1"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "1.5档（小）"
+                    .Command = "JT_MODE1.5"
+                }
+                Option{
+                    .Id = "Option_003"
+                    .Description = "2档（中等）"
+                    .Command = "JT_MODE2"
+                }
+                Option{
+                    .Id = "Option_004"
+                    .Description = "3档（中等）"
+                    .Command = "JT_MODE3"
+                }
+                Option{
+                    .Id = "Option_005"
+                    .Description = "4档（大，无冲变向变频）"
+                    .Command = "JT_MODE4"
+                }
+                Option{
+                    .Id = "Option_006"
+                    .Description = "5档（大，高帧建议）"
+                    .Command = "JT_MODE5"
+                }
+                Option{
+                    .Id = "Option_007"
+                    .Description = "6档（最大，高帧建议）"
+                    .Command = "JT_MODE6"
+                }
+            }
+            .Selected = "Option_004"
+        }
+        OptionField{
+            .Id = "Func_012"
+            .Enabled = true
+            .Description = "切刀和道具自动取消急停"
+            .SubDescription = "切刀和道具时是否自动取消急停"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "AutoDisable"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "UnAutoDisable"
+                }
+            }
+            .Selected = "Option_001"
+        }
+        OptionField{
+            .Id = "Func_013"
+            .Enabled = true
+            .Description = "加速静步"
+            .SubDescription = "开启或关闭内格夫加速静步"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_Sprint_Plus"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_Sprint_Plus"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_014"
+            .Enabled = true
+            .Description = "连跳"
+            .SubDescription = "开启或关闭按住空格连跳"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_Bhop"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_Bhop"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_015"
+            .Enabled = true
+            .Description = "大跳"
+            .SubDescription = "开启或关闭大跳"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_JumpBug"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_JumpBug"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_016"
+            .Enabled = true
+            .Description = "RTSS锁帧"
+            .SubDescription = "开启或关闭RTSS锁帧"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "开启"
+                    .Command = "Open_RTSSfps"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "关闭"
+                    .Command = "Close_RTSSfps"
+                }
+            }
+            .Selected = "Option_002"
+        }
+        OptionField{
+            .Id = "Func_017"
+            .Enabled = true
+            .Description = "平台选择"
+            .SubDescription = "选择游戏平台环境"
+            Options{
+                Option{
+                    .Id = "Option_001"
+                    .Description = "Faceit"
+                    .Command = "Faceit_Game"
+                }
+                Option{
+                    .Id = "Option_002"
+                    .Description = "非Faceit"
+                    .Command = "Normal_Game"
+                }
+            }
+            .Selected = "Option_002"
+        }
+    }
+}

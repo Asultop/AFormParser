@@ -1,0 +1,106 @@
+// 双斜杠为注释
+// .开头的属性是原生提供的属性，这个是设计上的而不是用户自定义的属性
+// $开头的函数是内置函数，用户可以在Scripts中自定义函数，Scripts的语言是Lua
+// *(Id).Bind 代表获取Id为Id的KeyBind控件的Bind属性值，支持解析外部变量
+// ${} 是字符串插值的语法，大括号内可用于解析外部变量或表达式，这里示例为解析TestTextField文本字段的文本内容
+
+@Version: 1.0  // 元属性 Version
+@Author: Asul // 元属性 Author
+@Description: A simple form component for user input. // 元属性 Description
+
+Form{  // 表单
+    .Id = "TestForm" // 可选ID
+    Group{ // 分组容器
+        .Title= "测试组件" // 分组标题
+        KeyBind{ // KeyBind 控件
+            .Id = "TestKeyBind"  // 可选Id
+            .Enabled = true // 可选，默认为true
+            .Description = "测试按键绑定"  // 必须 ： 描述文本
+            .SubDescription = "按下此键将执行测试命令" // 可选 ： 子描述文本
+            .Command = "+test" // 必须 ： 绑定按键时执行的命令
+
+            .Bind("v") // 可选 ： 绑定的按键，默认为None
+        }
+        MustField{ // 必须字段
+            .Id = "TestMustField" // 可选Id
+            .Enabled = *(TestKeyBind).Bind == "F" ? true : false // 可选，默认为true，这里示例为当TestKeyBind绑定的按键为F时才启用此字段，支持解析外部变量
+            .Description = "这是一个必须字段" // 可选：描述文本
+            .SubDescription = "必须字段示例" // 可选（当Description不为空时）, 必须不（当Description为空时）：子描述文本
+            .Command = "+Attack;" //必须 ：当满足条件时执行的命令，这里示例为输出文本到控制台
+            
+            .Bind("mouse1") // 必须：这是必须字段的绑定按键，这里示例为绑定鼠标左键
+        }
+        TextField{ // 文本字段
+            .Id = "TestTextField" // 可选Id
+            .Enabled = true // 可选，默认为true
+            .Description = "这是一个文本字段" // 必须：描述文本
+            .SubDescription = "文本字段示例" // 可选：子描述文本
+            .Text = "输出: ${__Greeting}" // 可选：默认文本内容
+            .Command = "echo ${__Greeting}" // 必须：当文本改变时执行的命令，这里示例为输出当前文本字段的文本内容到控制台，支持解析外部变量
+        }
+        LineField{ // 输入字段
+            .Id = "TestLineField" 
+            .Enabled = true 
+            .Description = "这是一个输入字段"
+            .SubDescription = "输入字段"
+            .Args{   // 可变参列表
+                .Arg{
+                    .Id = "id1" // 必须：参数Id
+                    .Description = "参数1" // 可选：参数描述文本
+                    .Value = "1"
+                }
+                .Arg{
+                    .Id = "id2" // 必须：参数Id
+                    .Description = "参数2" // 可选：参数描述文本
+                    .Value = "2"
+                }
+                .Arg{
+                    .Id = "id3" // 必须：参数Id
+                    .Description = "参数3" // 可选：参数描述文本
+                    .Value = "3"
+                }
+            }
+
+            .Expression = "echo " + $ProcessArgs(id1,id2,id3) // 表达式，支持调用Scripts中自定义函数，并传入Args中的自变量作为参数，这里示例为将输入的参数拼接成一个echo命令并执行
+        }
+        OptionField{ // 选项字段
+            .Id = "TestOptionField"
+            .Enabled = true
+            .Description = "这是一个选项字段" // 必须：描述文本
+            .SubDescription = "选项字段示例" // 可选：子描述文本
+            
+            Options{
+                Option{ // 选项1
+                    .Id = "Option1" // 必须：选项Id
+                    .Description= "选项1" // 可选：选项名称
+                    .Command = "echo '选项1被选中'"
+                }
+                Option{ // 选项2
+                    .Id = "Option2" // 必须：选项Id
+                    .Description= "选项2" // 可选：选项名称
+                    .Command = "echo '选项2被选中'"
+                }
+                Option{ // 选项3
+                    .Id = "Option3" // 必须：选项Id
+                    .Description= "选项3" // 可选：选项名称
+                    .Command = "echo '选项3被选中'"
+                }
+            }
+            
+            .Selected = "Option1" // 必须：默认选中的选项Id，这里示例为默认选中Option1
+        }
+    }
+
+}
+Scripts{
+    function ProcessArgs(arg1, arg2, arg3)
+
+        local n1 = tonumber(arg1) or 0
+        local n2 = tonumber(arg2) or 0
+        local n3 = tonumber(arg3) or 0
+
+        local sum = n1 + n2 + n3
+
+        return tostring(sum)
+    end
+}
