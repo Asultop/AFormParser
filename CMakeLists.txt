@@ -10,6 +10,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+
+
 find_package(Qt6 QUIET COMPONENTS Core)
 if (Qt6_FOUND)
     set(QT_PACKAGE Qt6)

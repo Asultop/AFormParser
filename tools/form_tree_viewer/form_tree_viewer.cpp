@@ -183,7 +183,6 @@ public:
             it.value()(item->text(1));
             rebuildAllViews();
         });
-
         loadFromFile(defaultFormPath);
     }
 
@@ -424,7 +423,7 @@ private:
                 auto *argHost = new QWidget(editorHost);
                 auto *argLayout = new QHBoxLayout(argHost);
                 argLayout->setContentsMargins(0, 0, 0, 0);
-                auto *argLabel = new QLabel(arg->id.isEmpty() ? QStringLiteral("arg") : arg->id, argHost);
+                auto *argLabel = new QLabel(arg->id.isEmpty() ? QStringLiteral("arg") : arg->description, argHost);
                 auto *argEdit = new QLineEdit(arg->value, argHost);
                 bindLineEditCommit(argEdit, [arg](const QString &v) { arg->value = v; });
                 argLayout->addWidget(argLabel);

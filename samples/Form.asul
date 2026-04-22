@@ -100,7 +100,8 @@ Scripts{
         local n3 = tonumber(arg3) or 0
 
         local sum = n1 + n2 + n3
-
+        print("Lua Launched!")
+        print(#("StringPlus ".."11"))
         return tostring(sum)
     end
 }
