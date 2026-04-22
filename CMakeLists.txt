@@ -108,6 +108,15 @@ target_link_libraries(form_tree_viewer PRIVATE
     ${QT_PACKAGE}::Widgets
 )
 
+add_executable(register_function_demo
+    tools/register_function_demo/register_function_demo.cpp
+)
+
+target_link_libraries(register_function_demo PRIVATE
+    aformparser
+    ${QT_PACKAGE}::Core
+)
+
 if (WIN32)
     add_custom_command(TARGET legacy_to_form POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -131,6 +140,12 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:${QT_PACKAGE}::Core>
             $<TARGET_FILE_DIR:form_tree_viewer>
+    )
+
+    add_custom_command(TARGET register_function_demo POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${QT_PACKAGE}::Core>
+            $<TARGET_FILE_DIR:register_function_demo>
     )
 
     add_custom_command(TARGET form_tree_viewer POST_BUILD

@@ -1,0 +1,44 @@
+@Version: 1.0
+@Author: Demo
+@Description: Demo for registerFunction and global values.
+
+Form{
+    .Id = "RegisterFunctionDemo"
+    Group{
+        .Title = "自定义函数示例"
+
+        LineField{
+            .Id = "Line_Join"
+            .Enabled = true
+            .Description = "调用 C++ 注册函数"
+            .SubDescription = "通过 Scripts 间接调用 RegisteredJoin"
+            .Args{
+                .Arg{
+                    .Id = "left"
+                    .Description = "左参数"
+                    .Value = "Alpha"
+                }
+                .Arg{
+                    .Id = "right"
+                    .Description = "右参数"
+                    .Value = "Beta"
+                }
+            }
+            .Expression = "echo " + $UseRegisteredJoin(left,right)
+        }
+
+        TextField{
+            .Id = "Text_Global"
+            .Enabled = true
+            .Description = "全局值示例"
+            .SubDescription = "使用 registerGlobalVariable 注入"
+            .Command = "echo ${__Greeting}"
+        }
+    }
+}
+
+Scripts{
+    function UseRegisteredJoin(a,b)
+        return RegisteredJoin(a,b)
+    end
+}
