@@ -52,6 +52,16 @@ class OptionNode;
 class ScriptsNode;
 class Document;
 
+struct CFGExportItem {
+	QString output;
+	QString content;
+	QString relativePath;
+	QString absolutePath;
+	QString fileName;
+	QString sourceFormId;
+	QString description;
+};
+
 using NodePtr = std::shared_ptr<Node>;
 
 class Node : public std::enable_shared_from_this<Node> {
@@ -270,10 +280,12 @@ public:
 	std::shared_ptr<FormNode> toForm() override;
 
 	QString id;
+	QString output;
+	QString description;
 	QVector<GroupNode::Ptr> groups;
 
 	QString dump(int indent = 0) const override;
-	QString toCFG() const override;
+	QString toCFG() const;
 
 private:
 	FormNode();
@@ -307,12 +319,15 @@ public:
     bool parse(const QString &formText, ParseError *error = nullptr);
     QString dump() const;
     QString toCFG() const;
+    QVector<CFGExportItem> toCFGs() const;
 
     void clear();
 
     QString metaValue(const QString &key) const;
     void setMetaValue(const QString &key, const QString &value);
     QVector<QPair<QString, QString>> metaEntries() const;
+
+    QStringList importPaths() const;
 
     QVector<NodePtr> allNodes() const;
     NodePtr findById(const QString &id) const;
@@ -324,7 +339,12 @@ public:
     QString executeFunction(const QString &fnName, const QStringList &args, QString *error = nullptr) const;
     QString executeScriptFunction(const QString &fnName, const QStringList &args, QString *error = nullptr) const;
 
-    FormNode::Ptr form;
+    static QString resolvePath(const QString &basePath, const QString &inputPath);
+
+    QString sourceFilePath() const { return sourceFilePath_; }
+    void setSourceFilePath(const QString &path) { sourceFilePath_ = path; }
+
+    QVector<FormNode::Ptr> forms;
     ScriptsNode::Ptr scripts;
 
 private:
@@ -332,6 +352,7 @@ private:
     mutable std::shared_ptr<LuaRuntime> luaRuntime_;
     mutable bool luaScriptLoaded_ = false;
     QMap<QString, QString> globalVars_;
+    QString sourceFilePath_;
 };
 
 } // namespace AFormParser

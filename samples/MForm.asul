@@ -1,0 +1,156 @@
+@Version: 1.0
+@Author: TestAuthor
+@Description: Multi-Form Test Sample
+@Import: ["../lua/utils.lua", "../lua/helpers.lua"]
+
+Form{
+    .Id = "Form1"
+    .Output = "scripts/KeyBindForm"
+    .Description = "按键绑定表单 - 用于配置游戏按键"
+    Group{
+        .Title = "战斗设置"
+        KeyBind{
+            .Id = "AttackKey"
+            .Enabled = true
+            .Description = "攻击按键"
+            .SubDescription = "按下执行攻击命令"
+            .Command = "+attack"
+            .Bind("mouse1")
+        }
+        KeyBind{
+            .Id = "JumpKey"
+            .Enabled = true
+            .Description = "跳跃按键"
+            .SubDescription = "按下执行跳跃"
+            .Command = "+jump"
+            .Bind("space")
+        }
+    }
+    Group{
+        .Title = "移动设置"
+        KeyBind{
+            .Id = "ForwardKey"
+            .Enabled = true
+            .Description = "前进按键"
+            .SubDescription = "控制角色前进"
+            .Command = "+forward"
+            .Bind("w")
+        }
+        KeyBind{
+            .Id = "BackwardKey"
+            .Enabled = true
+            .Description = "后退按键"
+            .SubDescription = "控制角色后退"
+            .Command = "+backward"
+            .Bind("s")
+        }
+    }
+}
+
+Form{
+    .Id = "Form2"
+    .Output = "scripts/TextInputForm"
+    .Description = "文本输入表单 - 用于配置聊天和命令"
+    Group{
+        .Title = "聊天设置"
+        TextField{
+            .Id = "ChatPrefix"
+            .Enabled = true
+            .Description = "聊天前缀"
+            .SubDescription = "发送消息时添加的前缀"
+            .Text = "/all "
+            .Command = "say ${__ChatPrefix}${ChatInput}"
+        }
+        TextField{
+            .Id = "ChatInput"
+            .Enabled = true
+            .Description = "聊天内容"
+            .SubDescription = "输入聊天内容"
+            .Text = "Hello World"
+            .Command = "say ${ChatInput}"
+        }
+    }
+    Group{
+        .Title = "命令设置"
+        LineField{
+            .Id = "CustomCommand"
+            .Enabled = true
+            .Description = "自定义命令"
+            .SubDescription = "输入自定义命令"
+            .Args{
+                .Arg{
+                    .Id = "cmd_arg1"
+                    .Description = "命令参数1"
+                    .Value = "param1"
+                }
+                .Arg{
+                    .Id = "cmd_arg2"
+                    .Description = "命令参数2"
+                    .Value = "param2"
+                }
+            }
+            .Expression = $BuildCommand(cmd_arg1, cmd_arg2)
+        }
+    }
+}
+
+Form{
+    .Id = "Form3"
+    .Output = "D:/export/AutoCompleteForm"
+    .Description = "自动完成表单 - 选项配置"
+    Group{
+        .Title = "模式选择"
+        OptionField{
+            .Id = "GameMode"
+            .Enabled = true
+            .Description = "游戏模式"
+            .SubDescription = "选择当前游戏模式"
+            Options{
+                Option{
+                    .Id = "Mode_Easy"
+                    .Description = "简单模式"
+                    .Command = "difficulty 1"
+                }
+                Option{
+                    .Id = "Mode_Normal"
+                    .Description = "普通模式"
+                    .Command = "difficulty 2"
+                }
+                Option{
+                    .Id = "Mode_Hard"
+                    .Description = "困难模式"
+                    .Command = "difficulty 3"
+                }
+            }
+            .Selected = "Mode_Normal"
+        }
+    }
+    Group{
+        .Title = "功能开关"
+        OptionField{
+            .Id = "AutoAim"
+            .Enabled = true
+            .Description = "自动瞄准"
+            .SubDescription = "启用后自动瞄准目标"
+            Options{
+                Option{
+                    .Id = "AutoAim_On"
+                    .Description = "开启"
+                    .Command = "set autoaim 1"
+                }
+                Option{
+                    .Id = "AutoAim_Off"
+                    .Description = "关闭"
+                    .Command = "set autoaim 0"
+                }
+            }
+            .Selected = "AutoAim_On"
+        }
+    }
+}
+
+Scripts{
+    function BuildCommand(arg1, arg2)
+        return "custom " .. arg1 .. " " .. arg2
+    end
+}

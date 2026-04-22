@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    okAll &= check(doc->form != nullptr,
+    okAll &= check(!doc->forms.isEmpty(),
                    QStringLiteral("Document 含 Form 节点"),
                    qout,
                    qerr);

@@ -115,25 +115,43 @@ public:
         auto *rightPane = new QWidget(splitter);
         auto *rightLayout = new QVBoxLayout(rightPane);
 
+        formSelector_ = new QComboBox(rightPane);
+        formSelector_->setMinimumContentsLength(10);
+        formSelector_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
         auto *dumpBox = new QGroupBox(QStringLiteral("Dump (Form)"), rightPane);
         auto *dumpLayout = new QVBoxLayout(dumpBox);
         dumpEdit_ = new QPlainTextEdit(dumpBox);
         dumpEdit_->setReadOnly(true);
         dumpEdit_->setPlaceholderText(QStringLiteral("节点树变更后将实时刷新 Dump"));
 
-        auto *cfgBox = new QGroupBox(QStringLiteral("toCFG"), rightPane);
+        auto *dumpAllBtn = new QPushButton(QStringLiteral("DumpAll"), rightPane);
+        auto *dumpBtnLayout = new QHBoxLayout();
+        dumpBtnLayout->addStretch();
+        dumpBtnLayout->addWidget(dumpAllBtn);
+        dumpLayout->addLayout(dumpBtnLayout);
+        dumpLayout->addWidget(dumpEdit_);
+
+        auto *cfgBox = new QGroupBox(QStringLiteral("toCFGs"), rightPane);
         auto *cfgLayout = new QVBoxLayout(cfgBox);
         cfgEdit_ = new QPlainTextEdit(cfgBox);
         cfgEdit_->setReadOnly(true);
-        cfgEdit_->setPlaceholderText(QStringLiteral("节点树变更后将实时刷新 toCFG"));
+        cfgEdit_->setPlaceholderText(QStringLiteral("节点树变更后将实时刷新 toCFGs"));
+
+        outputPathEdit_ = new QLineEdit(cfgBox);
+        outputPathEdit_->setReadOnly(true);
+        outputPathEdit_->setPlaceholderText(QStringLiteral("Output 文件路径"));
 
         const QFont mono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
         dumpEdit_->setFont(mono);
         cfgEdit_->setFont(mono);
+        outputPathEdit_->setFont(mono);
 
+        rightLayout->addWidget(formSelector_);
         dumpLayout->addWidget(dumpEdit_);
-        cfgLayout->addWidget(cfgEdit_);
         rightLayout->addWidget(dumpBox, 1);
+        cfgLayout->addWidget(outputPathEdit_);
+        cfgLayout->addWidget(cfgEdit_);
         rightLayout->addWidget(cfgBox, 1);
 
         splitter->addWidget(leftSplitter);
@@ -171,6 +189,17 @@ public:
             loadFromFile(fileEdit_->text().trimmed());
         });
 
+        connect(dumpAllBtn, &QPushButton::clicked, this, [this]() {
+            showDumpAllWindow();
+        });
+
+        connect(formSelector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
+            if (rebuilding_) {
+                return;
+            }
+            rebuildAllViews();
+        });
+
         connect(tree_, &QTreeWidget::itemChanged, this, [this](QTreeWidgetItem *item, int column) {
             if (rebuilding_ || column != 1 || !item) {
                 return;
@@ -187,6 +216,8 @@ public:
     }
 
 private:
+    QLineEdit *outputPathEdit_ = nullptr;
+
     QTreeWidgetItem *addEditable(QTreeWidgetItem *parent,
                                  const QString &name,
                                  const QString &value,
@@ -456,7 +487,7 @@ private:
             }
 
             connect(combo,
-                    qOverload<int>(&QComboBox::currentIndexChanged),
+                    QOverload<int>::of(&QComboBox::currentIndexChanged),
                     this,
                     [this, combo, optField](int idx) {
                         if (rebuilding_ || idx < 0) {
@@ -481,14 +512,15 @@ private:
         auto *content = new QWidget(previewScroll_);
         auto *layout = new QVBoxLayout(content);
 
-        if (!doc_ || !doc_->form) {
+        auto form = currentForm();
+        if (!form) {
             layout->addWidget(new QLabel(QStringLiteral("未加载 Form"), content));
             layout->addStretch();
             previewScroll_->setWidget(content);
             return;
         }
 
-        for (const auto &group : doc_->form->groups) {
+        for (const auto &group : form->groups) {
             if (!group) {
                 continue;
             }
@@ -591,12 +623,12 @@ private:
 
     void addFormNode(QTreeWidgetItem *root)
     {
-        if (!doc_ || !doc_->form) {
+        auto form = currentForm();
+        if (!form) {
             addReadOnly(root, QStringLiteral("Form"), QStringLiteral("<null>"));
             return;
         }
 
-        auto form = doc_->form;
         auto *formItem = addReadOnly(root,
                                      QStringLiteral("Form[%1]").arg(form->id.isEmpty() ? QStringLiteral("-") : form->id),
                                      QString());
@@ -605,6 +637,16 @@ private:
                     QStringLiteral(".Id"),
                     form->id,
                     [form](const QString &v) { form->id = v; });
+
+        addEditable(formItem,
+                    QStringLiteral(".Output"),
+                    form->output,
+                    [form](const QString &v) { form->output = v; });
+
+        addEditable(formItem,
+                    QStringLiteral(".Description"),
+                    form->description,
+                    [form](const QString &v) { form->description = v; });
 
         for (auto it = form->extraProperties.begin(); it != form->extraProperties.end(); ++it) {
             const QString k = it.key();
@@ -694,22 +736,125 @@ private:
     void rebuildAllViews()
     {
         rebuilding_ = true;
+        updateFormSelector();
         rebuildTreeView();
         rebuildPreviewControls();
         refreshOutputs();
         rebuilding_ = false;
     }
 
-    void refreshOutputs()
+    AFormParser::FormNode::Ptr currentForm() const
     {
-        if (!doc_) {
-            dumpEdit_->clear();
-            cfgEdit_->clear();
+        if (!doc_ || doc_->forms.isEmpty()) {
+            return nullptr;
+        }
+        int selectedIndex = formSelector_->currentIndex();
+        if (selectedIndex < 0 || selectedIndex >= doc_->forms.size()) {
+            return doc_->forms.first();
+        }
+        return doc_->forms.at(selectedIndex);
+    }
+
+    void updateFormSelector()
+    {
+        int currentIdx = formSelector_->currentIndex();
+        QVariant currentData;
+        if (currentIdx >= 0) {
+            currentData = formSelector_->currentData();
+        }
+
+        formSelector_->blockSignals(true);
+        formSelector_->setUpdatesEnabled(false);
+        formSelector_->clear();
+
+        if (!doc_ || doc_->forms.isEmpty()) {
+            formSelector_->setUpdatesEnabled(true);
+            formSelector_->setVisible(false);
+            formSelector_->blockSignals(false);
             return;
         }
 
-        dumpEdit_->setPlainText(doc_->dump());
-        cfgEdit_->setPlainText(doc_->toCFG());
+        for (int i = 0; i < doc_->forms.size(); ++i) {
+            const auto &form = doc_->forms.at(i);
+            QString label;
+            if (!form->description.isEmpty()) {
+                label = form->description;
+            } else if (!form->id.isEmpty()) {
+                label = form->id;
+            } else {
+                label = QStringLiteral("Form[%1]").arg(i);
+            }
+            formSelector_->addItem(label, i);
+        }
+
+        if (currentData.isValid()) {
+            int idx = formSelector_->findData(currentData);
+            if (idx >= 0) {
+                formSelector_->setCurrentIndex(idx);
+            }
+        } else if (currentIdx >= 0 && currentIdx < formSelector_->count()) {
+            formSelector_->setCurrentIndex(currentIdx);
+        }
+
+        formSelector_->setUpdatesEnabled(true);
+        formSelector_->setVisible(doc_->forms.size() > 1);
+        formSelector_->blockSignals(false);
+
+        if (!rebuilding_) {
+            refreshOutputs();
+        }
+    }
+
+    void showDumpAllWindow()
+    {
+        if (!doc_) {
+            return;
+        }
+
+        auto *dialog = new QDialog(this);
+        dialog->setWindowTitle(QStringLiteral("DumpAll - 完整 Document"));
+        dialog->resize(800, 600);
+
+        auto *layout = new QVBoxLayout(dialog);
+        auto *textEdit = new QPlainTextEdit(dialog);
+        textEdit->setReadOnly(true);
+        textEdit->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+        textEdit->setPlainText(doc_->dump());
+
+        auto *closeBtn = new QPushButton(QStringLiteral("关闭"), dialog);
+        connect(closeBtn, &QPushButton::clicked, dialog, &QDialog::accept);
+
+        layout->addWidget(textEdit);
+        layout->addWidget(closeBtn);
+
+        dialog->exec();
+    }
+
+    void refreshOutputs()
+    {
+        auto form = currentForm();
+        if (!form) {
+            dumpEdit_->clear();
+            cfgEdit_->clear();
+            outputPathEdit_->clear();
+            return;
+        }
+
+        dumpEdit_->setPlainText(form->dump());
+
+        int selectedIndex = formSelector_->currentIndex();
+        if (selectedIndex < 0) {
+            selectedIndex = 0;
+        }
+
+        auto cfgItems = doc_->toCFGs();
+        if (selectedIndex < cfgItems.size()) {
+            cfgEdit_->setPlainText(cfgItems.at(selectedIndex).content);
+            outputPathEdit_->setText(cfgItems.at(selectedIndex).fileName);
+        } else {
+            cfgEdit_->setPlainText(QString());
+            outputPathEdit_->clear();
+        }
     }
 
     bool loadFromFile(const QString &path)
@@ -759,6 +904,7 @@ private:
     QTreeWidget *tree_ = nullptr;
     QPlainTextEdit *dumpEdit_ = nullptr;
     QPlainTextEdit *cfgEdit_ = nullptr;
+    QComboBox *formSelector_ = nullptr;
     QDialog *globalVarsDialog_ = nullptr;
     QTableWidget *globalVarsTable_ = nullptr;
     QMap<QString, QString> globalVars_;

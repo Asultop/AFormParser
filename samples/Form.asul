@@ -10,6 +10,8 @@
 
 Form{  // 表单
     .Id = "TestForm" // 可选ID
+    .Output = "Test"
+    .Description = "表单"
     Group{ // 分组容器
         .Title= "测试组件" // 分组标题
         KeyBind{ // KeyBind 控件

@@ -1,6 +1,7 @@
 #include "AFormParser/AFormParser.hpp"
 #include "AFormParser/LuaRuntime.hpp"
 
+#include <QFileInfo>
 #include <QRegularExpression>
 
 #include <functional>
@@ -1411,11 +1412,11 @@ ExportContext buildExportContext(const Document &doc)
 {
 	ExportContext ctx;
 	ctx.globalVars = doc.globalVariables();
-	if (!doc.form) {
+	if (doc.forms.isEmpty()) {
 		return ctx;
 	}
 
-	for (const auto &group : doc.form->groups) {
+	for (const auto &group : doc.forms.first()->groups) {
 		if (!group) {
 			continue;
 		}
@@ -2113,6 +2114,12 @@ QString FormNode::dump(int indent) const
 	if (!id.isEmpty()) {
 		lines << (inner + QStringLiteral(".Id = ") + quote(id));
 	}
+	if (!output.isEmpty()) {
+		lines << (inner + QStringLiteral(".Output = ") + quote(output));
+	}
+	if (!description.isEmpty()) {
+		lines << (inner + QStringLiteral(".Description = ") + quote(description));
+	}
 	for (const auto &group : groups) {
 		if (group) {
 			lines << group->dump(indent + 1);
@@ -2198,7 +2205,7 @@ Document::Ptr Document::from(const QString &formText, ParseError *error)
 
 void Document::clear()
 {
-	form.reset();
+	forms.clear();
 	scripts.reset();
 	meta_.clear();
 }
@@ -2428,13 +2435,11 @@ bool Document::parse(const QString &formText, ParseError *error)
 			if (equalsIgnoreCase(blockName, QStringLiteral("Form"))) {
 				if (parentType != FrameType::Root) {
 					return fail(lineIndex + 1, blockTokenColumn, QStringLiteral("Form 只能在顶层定义"));
-				}
-				if (form) {
-					return fail(lineIndex + 1, blockTokenColumn, QStringLiteral("只能存在一个 Form 节点"));
-				}
-				form = FormNode::create();
-				pushFrame(FrameType::Form, form, blockName, lineIndex + 1, blockTokenColumn);
-				continue;
+			}
+			auto newForm = FormNode::create();
+			forms.append(newForm);
+			pushFrame(FrameType::Form, newForm, blockName, lineIndex + 1, blockTokenColumn);
+			continue;
 			}
 
 			if (equalsIgnoreCase(blockName, QStringLiteral("Group"))) {
@@ -2688,6 +2693,12 @@ bool Document::parse(const QString &formText, ParseError *error)
 			if (equalsIgnoreCase(propName, QStringLiteral("Id"))) {
 				formNode->id = valueText;
 				handled = true;
+			} else if (equalsIgnoreCase(propName, QStringLiteral("Output"))) {
+				formNode->output = valueText;
+				handled = true;
+			} else if (equalsIgnoreCase(propName, QStringLiteral("Description"))) {
+				formNode->description = valueText;
+				handled = true;
 			}
 		}
 
@@ -2822,7 +2833,7 @@ bool Document::parse(const QString &formText, ParseError *error)
 						QStringLiteral("存在未闭合的块定义: %1").arg(token));
 	}
 
-	if (!form) {
+	if (forms.isEmpty()) {
 		return fail(1, 1, QStringLiteral("未找到 Form 根节点"));
 	}
 
@@ -2841,13 +2852,16 @@ QString Document::dump() const
 		lines << QString();
 	}
 
-	if (form) {
-		lines << form->dump(0);
+	for (const auto &formNode : forms) {
+		if (formNode) {
+			lines << formNode->dump(0);
+			lines << QString();
+		}
 	}
 
 	if (scripts) {
-		if (!lines.isEmpty()) {
-			lines << QString();
+		if (lines.last().trimmed().isEmpty()) {
+			lines.removeLast();
 		}
 		lines << scripts->dump(0);
 	}
@@ -2857,130 +2871,160 @@ QString Document::dump() const
 
 QString Document::toCFG() const
 {
-	if (!form) {
+	if (forms.isEmpty()) {
 		return QString();
 	}
+	return toCFGs().first().content;
+}
 
-	ExportContext ctx = buildExportContext(*this);
-	QStringList cfgLines;
+QVector<CFGExportItem> Document::toCFGs() const
+{
+	QVector<CFGExportItem> results;
 
-	for (const auto &group : form->groups) {
-		if (!group) {
+	for (const auto &formNode : forms) {
+		if (!formNode) {
 			continue;
 		}
 
-		if (!group->title.trimmed().isEmpty()) {
-			cfgLines << QStringLiteral("//title %1").arg(quote(group->title));
-		}
+		CFGExportItem item;
+		item.output = formNode->output;
+		item.description = formNode->description;
+		item.sourceFormId = formNode->id;
 
-		for (const auto &field : group->fields) {
-			if (!field) {
+		ExportContext ctx = buildExportContext(*this);
+		ctx.globalVars = globalVars_;
+
+		for (const auto &group : formNode->groups) {
+			if (!group) {
 				continue;
 			}
 
-			if (!evaluateEnabled(field->enabledExpression, this, ctx)) {
-				continue;
+			if (!group->title.trimmed().isEmpty()) {
+				item.content += QStringLiteral("//title %1\n").arg(quote(group->title));
 			}
 
-			if (auto keyNode = field->toKeyBind()) {
-				QString cmd = applyTemplate(keyNode->command, this, ctx).trimmed();
-				if (cmd.isEmpty()) {
-					cmd = keyNode->command.trimmed();
+			for (const auto &field : group->fields) {
+				if (!field) {
+					continue;
 				}
-				if (!cmd.isEmpty()) {
-					cfgLines << QStringLiteral("bind %1 %2").arg(keyNode->bind.isEmpty() ? QStringLiteral("None") : keyNode->bind,
-																   cmd);
-				}
-				continue;
-			}
 
-			if (auto mustNode = field->toMustField()) {
-				QString cmd = applyTemplate(mustNode->command, this, ctx).trimmed();
-				if (cmd.isEmpty()) {
-					cmd = mustNode->command.trimmed();
+				if (!evaluateEnabled(field->enabledExpression, this, ctx)) {
+					continue;
 				}
-				if (!cmd.isEmpty()) {
-					cfgLines << QStringLiteral("bind %1 %2").arg(mustNode->bind.isEmpty() ? QStringLiteral("None") : mustNode->bind,
-																   cmd);
-				}
-				continue;
-			}
 
-			if (auto textNode = field->toTextField()) {
-				QString cmd = applyTemplate(textNode->command, this, ctx).trimmed();
-				if (cmd.isEmpty()) {
-					cmd = textNode->command.trimmed();
-				}
-				if (cmd.isEmpty() && !textNode->text.trimmed().isEmpty()) {
-					cmd = textNode->text.trimmed();
-				}
-				if (!cmd.isEmpty()) {
-					cfgLines << cmd;
-				}
-				continue;
-			}
-
-			if (auto lineNode = field->toLineField()) {
-				for (const auto &arg : lineNode->args) {
-					if (!arg || arg->id.trimmed().isEmpty()) {
-						continue;
+				if (auto keyNode = field->toKeyBind()) {
+					QString cmd = applyTemplate(keyNode->command, this, ctx).trimmed();
+					if (cmd.isEmpty()) {
+						cmd = keyNode->command.trimmed();
 					}
-					ctx.argValues[arg->id] = arg->value;
-				}
-
-				QString exprResult = evaluateExpression(lineNode->expression, this, ctx).trimmed();
-				if (exprResult.isEmpty()) {
-					exprResult = lineNode->expression.trimmed();
-				}
-				exprResult = applyTemplate(exprResult, this, ctx).trimmed();
-				if (!exprResult.isEmpty()) {
-					cfgLines << exprResult;
-				}
-				continue;
-			}
-
-			if (auto optionField = field->toOptionField()) {
-				OptionNode::Ptr selectedNode;
-				for (const auto &opt : optionField->options) {
-					if (opt && opt->id == optionField->selected) {
-						selectedNode = opt;
-						break;
+					if (!cmd.isEmpty()) {
+						item.content += QStringLiteral("bind %1 %2\n").arg(
+							keyNode->bind.isEmpty() ? QStringLiteral("None") : keyNode->bind, cmd);
 					}
+					continue;
 				}
 
-				if (!selectedNode) {
+				if (auto mustNode = field->toMustField()) {
+					QString cmd = applyTemplate(mustNode->command, this, ctx).trimmed();
+					if (cmd.isEmpty()) {
+						cmd = mustNode->command.trimmed();
+					}
+					if (!cmd.isEmpty()) {
+						item.content += QStringLiteral("bind %1 %2\n").arg(
+							mustNode->bind.isEmpty() ? QStringLiteral("None") : mustNode->bind, cmd);
+					}
+					continue;
+				}
+
+				if (auto textNode = field->toTextField()) {
+					QString cmd = applyTemplate(textNode->command, this, ctx).trimmed();
+					if (cmd.isEmpty()) {
+						cmd = textNode->command.trimmed();
+					}
+					if (cmd.isEmpty() && !textNode->text.trimmed().isEmpty()) {
+						cmd = textNode->text.trimmed();
+					}
+					if (!cmd.isEmpty()) {
+						item.content += cmd + QStringLiteral("\n");
+					}
+					continue;
+				}
+
+				if (auto lineNode = field->toLineField()) {
+					for (const auto &arg : lineNode->args) {
+						if (!arg || arg->id.trimmed().isEmpty()) {
+							continue;
+						}
+						ctx.argValues[arg->id] = arg->value;
+					}
+
+					QString exprResult = evaluateExpression(lineNode->expression, this, ctx).trimmed();
+					if (exprResult.isEmpty()) {
+						exprResult = lineNode->expression.trimmed();
+					}
+					exprResult = applyTemplate(exprResult, this, ctx).trimmed();
+					if (!exprResult.isEmpty()) {
+						item.content += exprResult + QStringLiteral("\n");
+					}
+					continue;
+				}
+
+				if (auto optionField = field->toOptionField()) {
+					OptionNode::Ptr selectedNode;
 					for (const auto &opt : optionField->options) {
-						if (opt) {
+						if (opt && opt->id == optionField->selected) {
 							selectedNode = opt;
 							break;
 						}
 					}
-				}
 
-				if (selectedNode) {
-					QString cmd = applyTemplate(selectedNode->command, this, ctx).trimmed();
-					if (cmd.isEmpty()) {
-						cmd = selectedNode->command.trimmed();
+					if (!selectedNode) {
+						for (const auto &opt : optionField->options) {
+							if (opt) {
+								selectedNode = opt;
+								break;
+							}
+						}
 					}
-					if (!cmd.isEmpty()) {
-						cfgLines << cmd;
+
+					if (selectedNode) {
+						QString cmd = applyTemplate(selectedNode->command, this, ctx).trimmed();
+						if (cmd.isEmpty()) {
+							cmd = selectedNode->command.trimmed();
+						}
+						if (!cmd.isEmpty()) {
+							item.content += cmd + QStringLiteral("\n");
+						}
 					}
+					continue;
 				}
-				continue;
 			}
 		}
+
+		item.content = item.content.trimmed();
+
+		if (!formNode->output.isEmpty()) {
+			item.relativePath = formNode->output;
+			item.fileName = formNode->output + QStringLiteral(".cfg");
+			item.absolutePath = resolvePath(sourceFilePath_, formNode->output);
+		}
+
+		results.append(item);
 	}
 
-	return cfgLines.join(QLatin1Char('\n'));
+	return results;
 }
 
 QVector<NodePtr> Document::allNodes() const
 {
 	QVector<NodePtr> nodes;
 
-	if (form) {
-		nodes.append(form);
-		for (const auto &group : form->groups) {
+	for (const auto &formNode : forms) {
+		if (!formNode) {
+			continue;
+		}
+		nodes.append(formNode);
+		for (const auto &group : formNode->groups) {
 			if (!group) {
 				continue;
 			}
@@ -3109,6 +3153,74 @@ QString Document::executeFunction(const QString &fnName, const QStringList &args
 QString Document::executeScriptFunction(const QString &fnName, const QStringList &args, QString *error) const
 {
 	return executeFunction(fnName, args, error);
+}
+
+QStringList Document::importPaths() const
+{
+	QStringList paths;
+	const QString importValue = metaValue(QStringLiteral("Import"));
+	if (importValue.isEmpty()) {
+		return paths;
+	}
+
+	QString trimmed = importValue.trimmed();
+	if (trimmed.startsWith(QLatin1Char('['))) {
+		int endBracket = trimmed.lastIndexOf(QLatin1Char(']'));
+		if (endBracket > 0) {
+			QString arrayContent = trimmed.mid(1, endBracket - 1).trimmed();
+			if (arrayContent.startsWith(QLatin1Char('{'))) {
+				arrayContent = arrayContent.mid(1, arrayContent.length() - 2).trimmed();
+			}
+
+			QRegularExpression pathRe(QStringLiteral("\"([^\"]+)\""));
+			QRegularExpressionMatchIterator it = pathRe.globalMatch(arrayContent);
+			while (it.hasNext()) {
+				QRegularExpressionMatch match = it.next();
+				paths.append(match.captured(1));
+			}
+		}
+	} else {
+		paths.append(importValue);
+	}
+
+	return paths;
+}
+
+QString Document::resolvePath(const QString &basePath, const QString &inputPath)
+{
+	if (inputPath.isEmpty()) {
+		return QString();
+	}
+
+	QString normalizedInput = inputPath;
+	normalizedInput.replace(QLatin1Char('\\'), QLatin1Char('/'));
+	while (normalizedInput.endsWith(QLatin1Char('/'))) {
+		normalizedInput.chop(1);
+	}
+
+	if (QFileInfo(normalizedInput).isAbsolute()) {
+		return normalizedInput;
+	}
+
+	QString baseDir;
+	if (!basePath.isEmpty()) {
+		QFileInfo fi(basePath);
+		baseDir = fi.absolutePath();
+	}
+
+	QString result;
+	if (!baseDir.isEmpty()) {
+		result = baseDir + QLatin1Char('/') + normalizedInput;
+	} else {
+		result = normalizedInput;
+	}
+
+	result.replace(QLatin1Char('\\'), QLatin1Char('/'));
+	while (result.contains(QLatin1String("//"))) {
+		result.replace(QLatin1String("//"), QLatin1String("/"));
+	}
+
+	return result;
 }
 
 } // namespace AFormParser
