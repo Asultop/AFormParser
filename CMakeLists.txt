@@ -119,6 +119,17 @@ target_link_libraries(register_function_demo PRIVATE
     ${QT_PACKAGE}::Core
 )
 
+add_executable(widget_preview
+    tools/widget_preview/main.cpp
+    tools/widget_preview/PreviewWindow.cpp
+)
+
+target_link_libraries(widget_preview PRIVATE
+    aformparser
+    ${QT_PACKAGE}::Core
+    ${QT_PACKAGE}::Widgets
+)
+
 if (WIN32)
     add_custom_command(TARGET legacy_to_form POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -156,6 +167,18 @@ if (WIN32)
             $<TARGET_FILE_DIR:form_tree_viewer>
     )
 
+    add_custom_command(TARGET widget_preview POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${QT_PACKAGE}::Core>
+            $<TARGET_FILE_DIR:widget_preview>
+    )
+
+    add_custom_command(TARGET widget_preview POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:${QT_PACKAGE}::Widgets>
+            $<TARGET_FILE_DIR:widget_preview>
+    )
+
     if (QT_PACKAGE STREQUAL "Qt6")
         get_target_property(_qt_qmake Qt6::qmake IMPORTED_LOCATION)
     else()
@@ -168,6 +191,10 @@ if (WIN32)
         if (WINDEPLOYQT_EXECUTABLE)
             add_custom_command(TARGET form_tree_viewer POST_BUILD
                 COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations --dir "$<TARGET_FILE_DIR:form_tree_viewer>" "$<TARGET_FILE:form_tree_viewer>"
+                VERBATIM
+            )
+            add_custom_command(TARGET widget_preview POST_BUILD
+                COMMAND "${WINDEPLOYQT_EXECUTABLE}" --no-translations --dir "$<TARGET_FILE_DIR:widget_preview>" "$<TARGET_FILE:widget_preview>"
                 VERBATIM
             )
         endif()

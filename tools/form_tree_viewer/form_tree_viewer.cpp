@@ -850,7 +850,7 @@ private:
         auto cfgItems = doc_->toCFGs();
         if (selectedIndex < cfgItems.size()) {
             cfgEdit_->setPlainText(cfgItems.at(selectedIndex).content);
-            outputPathEdit_->setText(cfgItems.at(selectedIndex).fileName);
+            outputPathEdit_->setText(cfgItems.at(selectedIndex).absolutePath);
         } else {
             cfgEdit_->setPlainText(QString());
             outputPathEdit_->clear();
@@ -888,6 +888,7 @@ private:
         }
 
         doc_ = nextDoc;
+        doc_->setSourceFilePath(path);
         fileEdit_->setText(path);
         statusLabel_->setText(QStringLiteral("已加载: ") + path);
         if (!globalVars_.isEmpty()) {
