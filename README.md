@@ -123,3 +123,20 @@ QString cfg = doc->toCFG();
 
 - Lua 运行时使用仓库内置源码（`thirdparty/lua`）。
 - Windows 下工具运行依赖 Qt 运行时库，CMake 已对目标添加必要的拷贝逻辑。
+
+## 文档
+
+详细 SDK 文档位于 [docs/](docs/) 目录：
+
+- [文档首页](docs/README.md) - 概览与导航
+- [快速开始](docs/Getting_Started.md) - 环境搭建与最小示例
+- [架构设计](docs/Architecture.md) - 系统架构与核心概念
+- [节点类型](docs/Node_Types.md) - 各类节点详解
+- [元属性](docs/Meta_Attributes.md) - @Import 等元属性说明
+- [表达式与模板](docs/Expression_and_Templates.md) - `${}` 与引用语法
+- [Lua 脚本](docs/Lua_Scripts.md) - Scripts 块与 Lua 集成
+- [函数注册](docs/Register_Functions.md) - C++ 函数扩展
+- [多表单输出](docs/Form_Output.md) - toCFGs 与路径解析
+- [API 参考](docs/API_Reference.md) - 完整 API 手册
+- [工具说明](docs/Tools.md) - 命令行工具用法
+- [ASUL 格式](docs/ASUL_Format.md) - 格式规范与示例
