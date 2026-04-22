@@ -24,7 +24,7 @@
 
 #include <functional>
 
-#include "AFormParser.hpp"
+#include "AFormParser/AFormParser.hpp"
 
 namespace {
 
@@ -865,7 +865,7 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QString defaultPath = QStringLiteral("Function_Preference_Form.asul");
+    QString defaultPath = QStringLiteral("samples/Function_Preference_Form.asul");
     const QStringList args = app.arguments();
     if (args.size() >= 2) {
         defaultPath = args.at(1);

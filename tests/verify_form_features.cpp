@@ -1,7 +1,7 @@
 #include <QCoreApplication>
 #include <QTextStream>
 
-#include "AFormParser.hpp"
+#include "AFormParser/AFormParser.hpp"
 
 namespace {
 

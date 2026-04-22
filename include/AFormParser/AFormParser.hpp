@@ -9,7 +9,7 @@
 #include <functional>
 #include <memory>
 
-#include "LuaRuntime.hpp"
+#include "AFormParser/LuaRuntime.hpp"
 
 namespace AFormParser {
 

@@ -7,7 +7,7 @@
 #include <QStringList>
 #include <QTextStream>
 
-#include "AFormParser.hpp"
+#include "AFormParser/AFormParser.hpp"
 
 namespace {
 
@@ -312,7 +312,7 @@ int main(int argc, char *argv[])
     QTextStream qerr(stderr);
 
     const QStringList args = app.arguments();
-    const QString inputPath = (args.size() >= 2) ? args.at(1) : QStringLiteral("Function_Preference.asul");
+    const QString inputPath = (args.size() >= 2) ? args.at(1) : QStringLiteral("samples/Function_Preference.asul");
     const QString outputPath = (args.size() >= 3) ? args.at(2) : defaultOutputPath(inputPath);
 
     QFile inFile(inputPath);

@@ -2,7 +2,7 @@
 #include <QFile>
 #include <QTextStream>
 
-#include "AFormParser.hpp"
+#include "AFormParser/AFormParser.hpp"
 
 int main(int argc, char *argv[])
 {

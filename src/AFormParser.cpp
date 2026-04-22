@@ -1,5 +1,5 @@
-#include "AFormParser.hpp"
-#include "LuaRuntime.hpp"
+#include "AFormParser/AFormParser.hpp"
+#include "AFormParser/LuaRuntime.hpp"
 
 #include <QRegularExpression>
 

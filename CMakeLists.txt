@@ -55,16 +55,16 @@ set(LUA_SOURCES
 )
 
 add_library(aformparser STATIC
-    AFormParser.cpp
-    AFormParser.hpp
-    LuaRuntime.cpp
-    LuaRuntime.hpp
+    src/AFormParser.cpp
+    src/LuaRuntime.cpp
+    include/AFormParser/AFormParser.hpp
+    include/AFormParser/LuaRuntime.hpp
     ${LUA_SOURCES}
 )
 
 target_include_directories(aformparser PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    thirdparty/lua
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/lua
 )
 
 target_link_libraries(aformparser PUBLIC
@@ -72,7 +72,7 @@ target_link_libraries(aformparser PUBLIC
 )
 
 add_executable(legacy_to_form
-    main.cpp
+    tools/legacy_to_form/main.cpp
 )
 
 target_link_libraries(legacy_to_form PRIVATE
@@ -81,7 +81,7 @@ target_link_libraries(legacy_to_form PRIVATE
 )
 
 add_executable(verify_form_features
-    verify_form_features.cpp
+    tests/verify_form_features.cpp
 )
 
 target_link_libraries(verify_form_features PRIVATE
@@ -90,7 +90,7 @@ target_link_libraries(verify_form_features PRIVATE
 )
 
 add_executable(form_to_cfg
-    form_to_cfg.cpp
+    tools/form_to_cfg/form_to_cfg.cpp
 )
 
 target_link_libraries(form_to_cfg PRIVATE
@@ -99,7 +99,7 @@ target_link_libraries(form_to_cfg PRIVATE
 )
 
 add_executable(form_tree_viewer
-    form_tree_viewer.cpp
+    tools/form_tree_viewer/form_tree_viewer.cpp
 )
 
 target_link_libraries(form_tree_viewer PRIVATE
