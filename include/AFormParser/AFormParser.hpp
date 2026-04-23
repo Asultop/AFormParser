@@ -344,6 +344,9 @@ public:
     QString sourceFilePath() const { return sourceFilePath_; }
     void setSourceFilePath(const QString &path) { sourceFilePath_ = path; }
 
+    bool evaluateFieldEnabled(const QString &fieldId) const;
+    QVector<QPair<QString, bool>> evaluateAllFieldsEnabled() const;
+
     QVector<FormNode::Ptr> forms;
     ScriptsNode::Ptr scripts;
 

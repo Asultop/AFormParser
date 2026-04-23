@@ -1,0 +1,113 @@
+@Version: 1.0
+@Author: TestUser
+@Description: 表单联动测试样例
+
+Form{
+    .Id = "FormLinkageTest"
+    .Output = "TestFormLinkage"
+    .Description = "表单联动测试"
+
+    Group{
+        .Title = "主控制"
+
+        OptionField{
+            .Id = "MainSwitch"
+            .Enabled = true
+            .Description = "功能总开关"
+            .SubDescription = "关闭后将禁用下方所有输入项"
+            Options{
+                Option{
+                    .Id = "Enabled"
+                    .Description = "开启"
+                    .Command = "echo MainSwitch Enabled"
+                }
+                Option{
+                    .Id = "Disabled"
+                    .Description = "关闭"
+                    .Command = "echo MainSwitch Disabled"
+                }
+            }
+            .Selected = "Enabled"
+        }
+    }
+
+    Group{
+        .Title = "详细设置"
+
+        OptionField{
+            .Id = "ModeSelect"
+            .Enabled = $(MainSwitch).selected == "Enabled"
+            .Description = "模式选择"
+            .SubDescription = "根据主开关状态可用"
+            Options{
+                Option{
+                    .Id = "ModeA"
+                    .Description = "模式A - 基础模式"
+                    .Command = "echo Mode A selected"
+                }
+                Option{
+                    .Id = "ModeB"
+                    .Description = "模式B - 进阶模式"
+                    .Command = "echo Mode B selected"
+                }
+            }
+            .Selected = "ModeA"
+        }
+
+        LineField{
+            .Id = "CustomCmd"
+            .Enabled = $(MainSwitch).selected == "Enabled" && $(ModeSelect).selected == "ModeB"
+            .Description = "自定义命令"
+            .SubDescription = "仅在进阶模式下可用"
+            Args{
+                .Arg{
+                    .Id = "cmd_name"
+                    .Description = "命令名称"
+                    .Value = "mycommand"
+                }
+                .Arg{
+                    .Id = "cmd_arg"
+                    .Description = "命令参数"
+                    .Value = "arg1"
+                }
+            }
+            .Expression = $ProcessCommand(cmd_name, cmd_arg)
+        }
+
+        TextField{
+            .Id = "MessageText"
+            .Enabled = $(MainSwitch).selected == "Enabled"
+            .Description = "消息文本"
+            .SubDescription = "将在启用状态下显示"
+            .Text = "Hello World"
+            .Command = "echo ${$(MessageText).Text}"
+        }
+
+        OptionField{
+            .Id = "DisplayOption"
+            .Enabled = $(MainSwitch).selected == "Enabled" && $(MessageText).text == "ShowSecret"
+            .Description = "显示选项"
+            .SubDescription = "当消息文本设为 ShowSecret 时显示"
+            Options{
+                Option{
+                    .Id = "Secret1"
+                    .Description = "秘密选项1"
+                    .Command = "echo Secret 1"
+                }
+                Option{
+                    .Id = "Secret2"
+                    .Description = "秘密选项2"
+                    .Command = "echo Secret 2"
+                }
+            }
+            .Selected = "Secret1"
+        }
+    }
+}
+
+Scripts{
+    function ProcessCommand(cmd_name, cmd_arg)
+        print("Processing command: " .. cmd_name .. " with arg: " .. cmd_arg)
+        return "echo Custom command executed: " .. cmd_name .. " " .. cmd_arg
+    end
+}

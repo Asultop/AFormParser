@@ -21,6 +21,7 @@
 #include <QTableWidget>
 #include <QHeaderView>
 #include <QAbstractItemView>
+#include <QTimer>
 
 #include <functional>
 
@@ -209,9 +210,34 @@ public:
                 return;
             }
 
+            QString oldValue = item->text(1);
             it.value()(item->text(1));
-            rebuildAllViews();
+
+            auto nodeIt = itemToNode_.find(item);
+            if (nodeIt != itemToNode_.end()) {
+                auto node = nodeIt.value();
+                if (auto field = std::dynamic_pointer_cast<AFormParser::FieldNode>(node)) {
+                    for (const auto &group : doc_->forms.first()->groups) {
+                        if (!group) continue;
+                        for (const auto &f : group->fields) {
+                            if (f) {
+                                updateFieldPreviewVisibility(f);
+                            }
+                        }
+                    }
+                }
+            }
+
+            refreshOutputs();
         });
+
+        refreshDebounceTimer_ = new QTimer(this);
+        refreshDebounceTimer_->setSingleShot(true);
+        refreshDebounceTimer_->setInterval(150);
+        connect(refreshDebounceTimer_, &QTimer::timeout, this, [this]() {
+            refreshOutputs();
+        });
+
         loadFromFile(defaultFormPath);
     }
 
@@ -221,13 +247,18 @@ private:
     QTreeWidgetItem *addEditable(QTreeWidgetItem *parent,
                                  const QString &name,
                                  const QString &value,
-                                 const std::function<void(const QString &)> &setter)
+                                 const std::function<void(const QString &)> &setter,
+                                 const AFormParser::NodePtr &node = nullptr)
     {
         auto *item = new QTreeWidgetItem(parent);
         item->setText(0, name);
         item->setText(1, value);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         valueSetters_.insert(item, setter);
+        if (node) {
+            itemToNode_.insert(item, node);
+            nodeToItem_.insert(node, item);
+        }
         return item;
     }
 
@@ -341,8 +372,49 @@ private:
                 return;
             }
             setter(edit->text());
-            rebuildAllViews();
         });
+    }
+
+    void bindLineEditRealtime(QLineEdit *edit,
+                              const QString &fieldId,
+                              const std::function<void(const QString &)> &setter)
+    {
+        connect(edit, &QLineEdit::textChanged, this, [this, edit, fieldId, setter](const QString &) {
+            if (rebuilding_) {
+                return;
+            }
+            setter(edit->text());
+            updateFieldVisibility(fieldId);
+            refreshDebounceTimer_->start();
+        });
+    }
+
+    void updateFieldVisibility(const QString &changedFieldId)
+    {
+        if (!doc_) {
+            return;
+        }
+
+        auto form = currentForm();
+        if (!form) {
+            return;
+        }
+
+        for (const auto &group : form->groups) {
+            if (!group) continue;
+            for (const auto &field : group->fields) {
+                if (!field) continue;
+                auto it = fieldToPreviewWidget_.find(field);
+                if (it != fieldToPreviewWidget_.end()) {
+                    QWidget *widget = it.value();
+                    if (widget) {
+                        bool enabled = doc_->evaluateFieldEnabled(field->id);
+                        widget->setVisible(enabled);
+                        widget->setEnabled(enabled);
+                    }
+                }
+            }
+        }
     }
 
     QWidget *createPreviewRow(const QString &title,
@@ -373,7 +445,7 @@ private:
         return row;
     }
 
-    void addPreviewField(QVBoxLayout *groupLayout,
+    QWidget *addPreviewField(QVBoxLayout *groupLayout,
                          const AFormParser::FieldNode::Ptr &field,
                          QWidget *parent)
     {
@@ -387,16 +459,17 @@ private:
 
             auto *bindEdit = new QLineEdit(key->bind, editorHost);
             bindEdit->setPlaceholderText(QStringLiteral("Bind"));
-            bindLineEditCommit(bindEdit, [key](const QString &v) { key->bind = v; });
+            bindLineEditRealtime(bindEdit, field->id, [key](const QString &v) { key->bind = v; });
 
             auto *commandEdit = new QLineEdit(key->command, editorHost);
             commandEdit->setPlaceholderText(QStringLiteral("Command"));
-            bindLineEditCommit(commandEdit, [key](const QString &v) { key->command = v; });
+            bindLineEditRealtime(commandEdit, field->id, [key](const QString &v) { key->command = v; });
 
             editorLayout->addWidget(bindEdit);
             editorLayout->addWidget(commandEdit);
-            groupLayout->addWidget(createPreviewRow(title, subTitle, editorHost, parent));
-            return;
+            QWidget *row = createPreviewRow(title, subTitle, editorHost, parent);
+            groupLayout->addWidget(row);
+            return row;
         }
 
         if (auto must = field->toMustField()) {
@@ -410,12 +483,13 @@ private:
 
             auto *commandEdit = new QLineEdit(must->command, editorHost);
             commandEdit->setPlaceholderText(QStringLiteral("Command"));
-            bindLineEditCommit(commandEdit, [must](const QString &v) { must->command = v; });
+            bindLineEditRealtime(commandEdit, field->id, [must](const QString &v) { must->command = v; });
 
             editorLayout->addWidget(bindEdit);
             editorLayout->addWidget(commandEdit);
-            groupLayout->addWidget(createPreviewRow(title, subTitle + QStringLiteral(" (MustField)"), editorHost, parent));
-            return;
+            QWidget *row = createPreviewRow(title, subTitle + QStringLiteral(" (MustField)"), editorHost, parent);
+            groupLayout->addWidget(row);
+            return row;
         }
 
         if (auto text = field->toTextField()) {
@@ -425,16 +499,17 @@ private:
 
             auto *textEdit = new QLineEdit(text->text, editorHost);
             textEdit->setPlaceholderText(QStringLiteral("Text"));
-            bindLineEditCommit(textEdit, [text](const QString &v) { text->text = v; });
+            bindLineEditRealtime(textEdit, field->id, [text](const QString &v) { text->text = v; });
 
             auto *commandEdit = new QLineEdit(text->command, editorHost);
             commandEdit->setPlaceholderText(QStringLiteral("Command"));
-            bindLineEditCommit(commandEdit, [text](const QString &v) { text->command = v; });
+            bindLineEditRealtime(commandEdit, field->id, [text](const QString &v) { text->command = v; });
 
             editorLayout->addWidget(textEdit);
             editorLayout->addWidget(commandEdit);
-            groupLayout->addWidget(createPreviewRow(title, subTitle, editorHost, parent));
-            return;
+            QWidget *row = createPreviewRow(title, subTitle, editorHost, parent);
+            groupLayout->addWidget(row);
+            return row;
         }
 
         if (auto line = field->toLineField()) {
@@ -444,7 +519,7 @@ private:
 
             auto *exprEdit = new QLineEdit(line->expression, editorHost);
             exprEdit->setPlaceholderText(QStringLiteral("Expression"));
-            bindLineEditCommit(exprEdit, [line](const QString &v) { line->expression = v; });
+            bindLineEditRealtime(exprEdit, field->id, [line](const QString &v) { line->expression = v; });
             editorLayout->addWidget(exprEdit);
 
             for (const auto &arg : line->args) {
@@ -456,14 +531,15 @@ private:
                 argLayout->setContentsMargins(0, 0, 0, 0);
                 auto *argLabel = new QLabel(arg->id.isEmpty() ? QStringLiteral("arg") : arg->description, argHost);
                 auto *argEdit = new QLineEdit(arg->value, argHost);
-                bindLineEditCommit(argEdit, [arg](const QString &v) { arg->value = v; });
+                bindLineEditRealtime(argEdit, arg->id, [arg](const QString &v) { arg->value = v; });
                 argLayout->addWidget(argLabel);
                 argLayout->addWidget(argEdit, 1);
                 editorLayout->addWidget(argHost);
             }
 
-            groupLayout->addWidget(createPreviewRow(title, subTitle, editorHost, parent));
-            return;
+            QWidget *row = createPreviewRow(title, subTitle, editorHost, parent);
+            groupLayout->addWidget(row);
+            return row;
         }
 
         if (auto optField = field->toOptionField()) {
@@ -489,17 +565,21 @@ private:
             connect(combo,
                     QOverload<int>::of(&QComboBox::currentIndexChanged),
                     this,
-                    [this, combo, optField](int idx) {
+                    [this, combo, optField, fieldId = field->id](int idx) {
                         if (rebuilding_ || idx < 0) {
                             return;
                         }
                         optField->selected = combo->itemData(idx).toString();
-                        rebuildAllViews();
+                        updateFieldVisibility(fieldId);
+                        refreshOutputs();
                     });
 
-            groupLayout->addWidget(createPreviewRow(title, subTitle, combo, parent));
-            return;
+            QWidget *row = createPreviewRow(title, subTitle, combo, parent);
+            groupLayout->addWidget(row);
+            return row;
         }
+
+        return nullptr;
     }
 
     void rebuildPreviewControls()
@@ -508,6 +588,8 @@ private:
         if (old) {
             old->deleteLater();
         }
+
+        fieldToPreviewWidget_.clear();
 
         auto *content = new QWidget(previewScroll_);
         auto *layout = new QVBoxLayout(content);
@@ -530,11 +612,25 @@ private:
 
             for (const auto &field : group->fields) {
                 if (field) {
-                    addPreviewField(groupLayout, field, groupBox);
+                    QWidget *row = addPreviewField(groupLayout, field, groupBox);
+                    if (row) {
+                        fieldToPreviewWidget_.insert(field, row);
+                    }
                 }
             }
 
             layout->addWidget(groupBox);
+        }
+
+        for (const auto &group : form->groups) {
+            if (!group) {
+                continue;
+            }
+            for (const auto &field : group->fields) {
+                if (field) {
+                    updateFieldPreviewVisibility(field);
+                }
+            }
         }
 
         layout->addStretch();
@@ -857,6 +953,24 @@ private:
         }
     }
 
+    void updateFieldPreviewVisibility(const AFormParser::FieldNode::Ptr &field)
+    {
+        auto it = fieldToPreviewWidget_.find(field);
+        if (it != fieldToPreviewWidget_.end()) {
+            QWidget *widget = it.value();
+            if (widget) {
+                bool enabled = doc_->evaluateFieldEnabled(field->id);
+                widget->setVisible(enabled);
+                widget->setEnabled(enabled);
+            }
+        }
+    }
+
+    void updatePreviewForField(const AFormParser::FieldNode::Ptr &field)
+    {
+        updateFieldPreviewVisibility(field);
+    }
+
     bool loadFromFile(const QString &path)
     {
         if (path.isEmpty()) {
@@ -912,7 +1026,11 @@ private:
 
     AFormParser::Document::Ptr doc_;
     QHash<QTreeWidgetItem *, std::function<void(const QString &)>> valueSetters_;
+    QHash<QTreeWidgetItem *, AFormParser::NodePtr> itemToNode_;
+    QHash<AFormParser::NodePtr, QTreeWidgetItem *> nodeToItem_;
+    QHash<AFormParser::NodePtr, QWidget *> fieldToPreviewWidget_;
     bool rebuilding_ = false;
+    QTimer *refreshDebounceTimer_ = nullptr;
 
     void showGlobalVarsDialog();
     void applyGlobalVarsToDocument();

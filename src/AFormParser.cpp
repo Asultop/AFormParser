@@ -3096,6 +3096,53 @@ NodePtr Document::findById(const QString &id) const
 	return nullptr;
 }
 
+bool Document::evaluateFieldEnabled(const QString &fieldId) const
+{
+	if (forms.isEmpty()) {
+		return true;
+	}
+
+	auto node = findById(fieldId);
+	if (!node) {
+		return true;
+	}
+
+	auto field = std::dynamic_pointer_cast<FieldNode>(node);
+	if (!field) {
+		return true;
+	}
+
+	ExportContext ctx = buildExportContext(*this);
+	return evaluateEnabled(field->enabledExpression, this, ctx);
+}
+
+QVector<QPair<QString, bool>> Document::evaluateAllFieldsEnabled() const
+{
+	QVector<QPair<QString, bool>> results;
+	if (forms.isEmpty()) {
+		return results;
+	}
+
+	ExportContext ctx = buildExportContext(*this);
+
+	for (const auto &group : forms.first()->groups) {
+		if (!group) {
+			continue;
+		}
+
+		for (const auto &field : group->fields) {
+			if (!field || field->id.isEmpty()) {
+				continue;
+			}
+
+			bool enabled = evaluateEnabled(field->enabledExpression, this, ctx);
+			results.append({field->id, enabled});
+		}
+	}
+
+	return results;
+}
+
 void Document::registerFunction(const QString &name, LuaFunction func)
 {
 	if (!luaRuntime_) {

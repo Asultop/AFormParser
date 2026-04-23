@@ -13,7 +13,9 @@
 5. [遍历节点树](#遍历节点树)
 6. [NodePtr 类型转换](#nodeptr-类型转换)
 7. [修改节点值](#修改节点值)
-8. [完整示例](#完整示例)
+8. [字段启用表达式求值](#字段启用表达式求值)
+9. [实时预览与表单联动](#实时预览与表单联动)
+10. [完整示例](#完整示例)
 
 ---
 
@@ -527,6 +529,275 @@ for (const auto &form : doc->forms) {
 for (const auto &group : form->groups) {
     group->title = "新分组标题";
 }
+```
+
+---
+
+## 字段启用表达式求值
+
+### 概述
+
+AFormParser 支持在字段的 `.Enabled` 属性中使用表达式来控制字段的启用/禁用状态。表达式可以引用其他字段的值，实现表单联动。
+
+### 表达式语法
+
+```cpp
+.Enabled = true                              // 简单布尔值
+.Enabled = $(FieldId).selected == "yes"     // 引用 OptionField 的选中值
+.Enabled = $(FieldA).text == "Show"         // 引用 TextField 的文本值
+.Enabled = $(MainSwitch).selected == "Enabled" && $(ModeSelect).selected == "ModeB"
+```
+
+### 求值 API
+
+Document 类提供了两个求值方法：
+
+```cpp
+class Document {
+public:
+    // 求值单个字段的启用状态
+    bool evaluateFieldEnabled(const QString &fieldId) const;
+
+    // 批量求值所有字段的启用状态
+    QVector<QPair<QString, bool>> evaluateAllFieldsEnabled() const;
+};
+```
+
+### 单字段求值
+
+```cpp
+// 判断某个字段当前是否启用
+bool isEnabled = doc->evaluateFieldEnabled("MyFieldId");
+if (isEnabled) {
+    // 字段可见且可用
+} else {
+    // 字段被隐藏或禁用
+}
+```
+
+### 批量求值
+
+```cpp
+// 一次性获取所有字段的启用状态
+auto results = doc->evaluateAllFieldsEnabled();
+for (const auto &pair : results) {
+    QString fieldId = pair.first;
+    bool enabled = pair.second;
+    qDebug() << fieldId << ":" << enabled;
+}
+```
+
+---
+
+## 实时预览与表单联动
+
+### 表单联动场景
+
+表单联动指一个字段的值变化时，影响其他字段的可见性或可用性。例如：
+
+- **主开关控制**：一个 OptionField 控制下方所有字段的启用状态
+- **模式切换**：选择不同模式显示不同的配置项
+- **条件显示**：某些字段需要满足特定条件才显示
+
+### 示例：主开关控制
+
+```asul
+Form{
+    Group{
+        OptionField{
+            .Id = "MainSwitch"
+            Options{
+                Option{ .Id = "Enabled", .Description = "开启" }
+                Option{ .Id = "Disabled", .Description = "关闭" }
+            }
+            .Selected = "Enabled"
+        }
+
+        TextField{
+            .Id = "DetailText"
+            .Enabled = $(MainSwitch).selected == "Enabled"
+            .Description = "详细设置"
+        }
+    }
+}
+```
+
+### 实时预览实现
+
+使用 SDK 实现实时预览界面时，需要：
+
+1. **建立字段到控件的映射**
+2. **监听数据变化信号**
+3. **变化时重新求值所有相关字段**
+
+```cpp
+#include <QTimer>
+
+class RealTimePreviewForm : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit RealTimePreviewForm(AFormParser::Document::Ptr doc, QWidget *parent = nullptr)
+        : QWidget(parent)
+        , doc_(doc)
+    {
+        setupUi();
+        buildFieldMapping();
+    }
+
+private:
+    void setupUi()
+    {
+        // 创建预览布局
+        previewLayout_ = new QVBoxLayout(this);
+
+        // 为每个字段创建对应的编辑控件
+        for (const auto &form : doc_->forms) {
+            for (const auto &group : form->groups) {
+                for (const auto &field : group->fields) {
+                    QWidget *widget = createFieldWidget(field);
+                    fieldToWidget_.insert(field, widget);
+                    previewLayout_->addWidget(widget);
+                }
+            }
+        }
+    }
+
+    void buildFieldMapping()
+    {
+        // 初始求值所有字段可见性
+        updateAllFieldVisibility();
+    }
+
+    QWidget* createFieldWidget(AFormParser::FieldNode::Ptr field)
+    {
+        // 根据字段类型创建对应控件
+        if (auto optField = field->toOptionField()) {
+            auto *combo = new QComboBox();
+            for (const auto &opt : optField->options) {
+                combo->addItem(opt->description, opt->id);
+            }
+
+            int idx = combo->findData(optField->selected);
+            if (idx >= 0) combo->setCurrentIndex(idx);
+
+            // 关键：连接信号实时更新
+            connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+                    this, [this, field, combo](int i) {
+                        if (rebuilding_) return;
+                        field->toOptionField()->selected = combo->itemData(i).toString();
+                        updateAllFieldVisibility();  // 更新所有字段可见性
+                    });
+
+            return combo;
+        }
+
+        if (auto textField = field->toTextField()) {
+            auto *edit = new QLineEdit(textField->text);
+
+            // 文本输入使用防抖机制
+            connect(edit, &QLineEdit::textChanged, this,
+                    [this, field, edit](const QString &text) {
+                        if (rebuilding_) return;
+                        field->toTextField()->text = text;
+                        updateAllFieldVisibility();
+                    });
+
+            return edit;
+        }
+
+        // ... 其他字段类型
+        return new QWidget();
+    }
+
+    void updateAllFieldVisibility()
+    {
+        for (const auto &form : doc_->forms) {
+            for (const auto &group : form->groups) {
+                for (const auto &field : group->fields) {
+                    bool enabled = doc_->evaluateFieldEnabled(field->id);
+
+                    QWidget *widget = fieldToWidget_.value(field);
+                    if (widget) {
+                        widget->setVisible(enabled);
+                        widget->setEnabled(enabled);
+                    }
+                }
+            }
+        }
+    }
+
+private:
+    AFormParser::Document::Ptr doc_;
+    QVBoxLayout *previewLayout_ = nullptr;
+    QHash<AFormParser::FieldNode::Ptr, QWidget*> fieldToWidget_;
+    bool rebuilding_ = false;
+};
+```
+
+### 防抖机制优化
+
+对于文本输入等高频事件，使用防抖避免频繁计算：
+
+```cpp
+class RealTimePreviewForm : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit RealTimePreviewForm(AFormParser::Document::Ptr doc, QWidget *parent = nullptr)
+        : QWidget(parent)
+        , doc_(doc)
+    {
+        // 创建防抖定时器
+        refreshDebounceTimer_ = new QTimer(this);
+        refreshDebounceTimer_->setSingleShot(true);
+        refreshDebounceTimer_->setInterval(150);  // 150ms 延迟
+
+        connect(refreshDebounceTimer_, &QTimer::timeout, this, [this]() {
+            updateAllFieldVisibility();
+        });
+    }
+
+    void onTextChanged(AFormParser::FieldNode::Ptr field, const QString &text)
+    {
+        if (auto textField = field->toTextField()) {
+            textField->text = text;
+        }
+        refreshDebounceTimer_->start();  // 重启定时器
+    }
+
+    void onOptionChanged(AFormParser::FieldNode::Ptr field, const QString &selected)
+    {
+        if (auto optField = field->toOptionField()) {
+            optField->selected = selected;
+        }
+        updateAllFieldVisibility();  // 离散事件立即更新
+    }
+
+private:
+    QTimer *refreshDebounceTimer_ = nullptr;
+};
+```
+
+### 关键要点
+
+| 要点 | 说明 |
+|------|------|
+| **及时性** | ComboBox 选择变化时立即调用 `updateAllFieldVisibility()` |
+| **防抖优化** | 文本输入使用 150ms 防抖，避免频繁刷新 |
+| **全量求值** | 任一字段变化时，重新求值**所有**字段的 Enabled 状态（因为表达式可能引用任何字段） |
+| **局部更新** | 只更新控件的 `setVisible/setEnabled`，不重建整个视图 |
+
+### 获取最新数据导出
+
+数据变化后，需要时可获取最新的 Dump 和 CFG：
+
+```cpp
+// 获取当前表单的 Dump
+QString dump = form->dump();
+
+// 获取所有表单的 CFG
+QVector<CFGExportItem> items = doc_->toCFGs();
 ```
 
 ---
