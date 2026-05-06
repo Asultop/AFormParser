@@ -1898,7 +1898,7 @@ QString LineFieldNode::dump(int indent) const
 	}
 
 	if (!expression.isEmpty()) {
-		lines << (inner + QStringLiteral(".Expression = ") + expression);
+		lines << (inner + QStringLiteral(".Expression = ") + quote(expression));
 	}
 
 	lines << (pad + QLatin1Char('}'));
